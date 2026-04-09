@@ -465,6 +465,16 @@ class App(tk.Tk):
             self._current_file_var.set(f"↳ {current}")
             self._log_line(status)
 
+        elif phase == "enum_done":
+            n = msg["enumerated"]
+            self._log_line(f"Enumeration complete — {n} items found. Downloading remaining…")
+
+        elif phase == "enum_error":
+            n = msg["enumerated"]
+            err = msg["error"]
+            self._log_line(f"Enumeration stopped after {n} items: {err}")
+            self._progress_label_var.set(f"Enumeration error after {n} items — see log")
+
         elif phase == "done":
             self._stop_inhibit()
             self._progress_bar.stop()

@@ -175,6 +175,18 @@ def run_download_job(
                 enumerated_count[0] += 1
         except Exception as exc:  # noqa: BLE001
             producer_error.append(str(exc))
+            # Surface the error immediately — don't wait for downloads to drain.
+            progress_queue.put({
+                "phase": "enum_error",
+                "error": str(exc),
+                "enumerated": enumerated_count[0],
+            })
+        else:
+            # Enumeration finished cleanly — tell the UI now.
+            progress_queue.put({
+                "phase": "enum_done",
+                "enumerated": enumerated_count[0],
+            })
         finally:
             item_queue.put(_SENTINEL)
 
