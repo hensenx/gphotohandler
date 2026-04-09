@@ -174,10 +174,9 @@ def run_download_job(
                 skipped += 1
                 status = f"Skipped (exists): {rel_path}"
             else:
+                done += 1
                 status = f"Downloaded: {rel_path}"
                 _save_manifest(dest_dir, manifest)
-
-            done += 1
             progress_queue.put({
                 "phase": "dl",
                 "done": done,
