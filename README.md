@@ -47,7 +47,7 @@ This app works around the restriction by:
 ## Installation
 
 ```bash
-git clone https://github.com/xhensen/gphotohandler.git
+git clone https://github.com/hensenx/gphotohandler.git
 cd gphotohandler
 
 python3 -m venv ~/gphotohandler-venv
