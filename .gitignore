@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Manifest and downloaded files (user-specific)
+.gphoto_manifest.json
+
+# VS Code
+.vscode/
+
+# Local venv (lives at ~/gphotohandler-venv, not here, but just in case)
+venv/
+.venv/
+env/

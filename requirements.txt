@@ -1,0 +1,5 @@
+playwright>=1.51.0
+playwright-stealth
+requests
+lxml
+git+https://github.com/xob0t/google_photos_web_client.git
