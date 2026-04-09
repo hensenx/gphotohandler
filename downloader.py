@@ -135,16 +135,17 @@ def download_item(
 
 def run_download_job(
     cookies_path: Path,
-    items: list[MediaItem],
+    items,  # Iterable[MediaItem]
     dest_dir: Path,
     progress_queue: queue.Queue,
     cancel_event: threading.Event,
     on_enumerate_progress: Callable[[int], None] | None = None,
 ) -> None:
-    """Execute a pipelined download job in the calling (background) thread.
+    """Execute a download job with concurrent enumeration and downloading.
 
-    Items are downloaded as soon as they are yielded by the iterator —
-    enumeration and downloading run concurrently (no separate phases).
+    A producer thread enumerates items via the API as fast as possible while
+    the calling thread downloads them.  This lets the 'seen' counter race
+    ahead of the 'downloaded' counter, as it did before pipelining.
 
     Progress queue message shapes:
       {"phase": "dl",   "done": int, "enumerated": int,
@@ -156,15 +157,41 @@ def run_download_job(
     session = _build_session(cookies_path)
     manifest = _load_manifest(dest_dir)
 
-    done = skipped = errors = enumerated = 0
+    done = skipped = errors = 0
+    # Mutable so the producer thread can update it and the consumer can read it.
+    enumerated_count: list[int] = [0]
+    producer_error: list[str] = []
     fatal_error: str | None = None
 
+    _SENTINEL = object()
+    item_queue: queue.Queue = queue.Queue()  # unbounded — MediaItem objects are tiny
+
+    def _producer() -> None:
+        try:
+            for item in items:
+                if cancel_event.is_set():
+                    break
+                item_queue.put(item)
+                enumerated_count[0] += 1
+        except Exception as exc:  # noqa: BLE001
+            producer_error.append(str(exc))
+        finally:
+            item_queue.put(_SENTINEL)
+
+    producer_thread = threading.Thread(target=_producer, daemon=True)
+    producer_thread.start()
+
     try:
-        for item in items:
+        while True:
             if cancel_event.is_set():
                 break
+            try:
+                item = item_queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            if item is _SENTINEL:
+                break
 
-            enumerated += 1
             rel_path, was_skipped, error = download_item(session, item, dest_dir, manifest)
 
             if error:
@@ -177,10 +204,11 @@ def run_download_job(
                 done += 1
                 status = f"Downloaded: {rel_path}"
                 _save_manifest(dest_dir, manifest)
+
             progress_queue.put({
                 "phase": "dl",
                 "done": done,
-                "enumerated": enumerated,
+                "enumerated": enumerated_count[0],
                 "current": rel_path,
                 "status": status,
                 "skipped": skipped,
@@ -188,6 +216,11 @@ def run_download_job(
             })
     except Exception as exc:  # noqa: BLE001
         fatal_error = str(exc)
+
+    producer_thread.join(timeout=5)
+
+    if producer_error and not fatal_error:
+        fatal_error = f"Enumeration error: {producer_error[0]}"
 
     _save_manifest(dest_dir, manifest)
     progress_queue.put({
