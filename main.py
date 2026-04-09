@@ -379,6 +379,7 @@ class App(tk.Tk):
 
         # Clear progress UI and start.
         self._cancel_event.clear()
+        self._total_items: int = 0  # set when enum_done arrives
         self._progress_var.set(0.0)
         self._progress_label_var.set("Starting…")
         self._current_file_var.set("")
@@ -452,12 +453,17 @@ class App(tk.Tk):
             status = msg["status"]
             current = msg["current"]
 
-            # Progress bar is indeterminate until enumeration catches up;
-            # once we know we've seen every item we switch to determinate
-            # — but since enumeration and downloading run together we just
-            # show a pulse bar with a text counter throughout.
-            self._progress_bar.config(mode="indeterminate")
-            self._progress_bar.start(10)
+            if self._total_items:
+                # Enumeration finished — show a real filling bar.
+                processed = done + skipped + errors
+                pct = min(100.0, 100.0 * processed / self._total_items)
+                self._progress_bar.stop()
+                self._progress_bar.config(mode="determinate")
+                self._progress_var.set(pct)
+            else:
+                self._progress_bar.config(mode="indeterminate")
+                self._progress_bar.start(10)
+
             self._progress_label_var.set(
                 f"Downloaded {done} / {enumerated} seen  —  "
                 f"skipped: {skipped}  errors: {errors}"
@@ -467,6 +473,9 @@ class App(tk.Tk):
 
         elif phase == "enum_done":
             n = msg["enumerated"]
+            self._total_items = n
+            self._progress_bar.stop()
+            self._progress_bar.config(mode="determinate")
             self._log_line(f"Enumeration complete — {n} items found. Downloading remaining…")
 
         elif phase == "enum_error":
