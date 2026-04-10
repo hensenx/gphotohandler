@@ -4,7 +4,7 @@ A desktop GUI app that downloads your entire Google Photos library to local stor
 
 It uses a one-time browser login (Playwright) to authenticate, then talks directly to the same internal web API that the Google Photos website uses, giving access to your full library with original-quality files.
 
-![screenshot placeholder](docs/screenshot.png)
+![screenshot placeholder](screenshot.png)
 
 ---
 
