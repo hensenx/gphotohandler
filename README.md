@@ -4,7 +4,7 @@ A desktop GUI app that downloads your entire Google Photos library to local stor
 
 It uses a one-time browser login (Playwright) to authenticate, then talks directly to the same internal web API that the Google Photos website uses, giving access to your full library with original-quality files.
 
-![screenshot placeholder](screenshot.png)
+![screenshot placeholder](docs/screenshot.png)
 
 ---
 
@@ -46,29 +46,45 @@ This app works around the restriction by:
 
 ## Installation
 
+**Linux / macOS**
 ```bash
 git clone https://github.com/hensenx/gphotohandler.git
 cd gphotohandler
+bash install.sh
+```
 
+**Windows**
+```bat
+git clone https://github.com/hensenx/gphotohandler.git
+cd gphotohandler
+install.bat
+```
+
+This creates a virtual environment at `~/gphotohandler-venv`, installs all Python dependencies, and downloads the Playwright Chromium browser automatically.
+
+<details>
+<summary>Manual setup (alternative)</summary>
+
+```bash
 python3 -m venv ~/gphotohandler-venv
-source ~/gphotohandler-venv/bin/activate
-
+source ~/gphotohandler-venv/bin/activate  # Windows: gphotohandler-venv\Scripts\activate
 pip install -r requirements.txt
 playwright install chromium
 ```
+</details>
 
 ---
 
 ## Running
 
+**Linux / macOS**
 ```bash
-~/gphotohandler-venv/bin/python main.py
+./run.sh
 ```
 
-Or with the venv activated:
-
-```bash
-python main.py
+**Windows**
+```bat
+run.bat
 ```
 
 ---
